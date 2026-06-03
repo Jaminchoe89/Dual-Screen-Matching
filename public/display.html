@@ -342,6 +342,7 @@ const CARD_BACK_SVG = `<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/
 
 const socket = io();
 let renderedCardCount = 0;
+let currentGameId = null;
 let timerInterval = null;
 let lastState = null;
 
@@ -411,7 +412,7 @@ function showGame(state) {
     timerDisplay.classList.toggle('urgent', remaining < 15000 && remaining > 0);
   }, 100);
 
-  renderCards(state.cards);
+  renderCards(state.cards, state.startTime);
 }
 
 function showFinished(state, animate_in) {
@@ -438,7 +439,7 @@ function showFinished(state, animate_in) {
     sbSub.textContent = 'Great effort!';
   }
 
-  renderCards(state.cards);
+  renderCards(state.cards, state.startTime);
 
   if (animate_in) {
     if (state.qualifies) launchConfetti();
@@ -467,10 +468,11 @@ function showTimeout(animate_in) {
 
 // ── Cards ────────────────────────────────────────────────────────────────────
 
-function renderCards(cards) {
-  if (cards.length !== renderedCardCount) {
+function renderCards(cards, gameId) {
+  if (gameId !== currentGameId || cards.length !== renderedCardCount) {
     grid.innerHTML = '';
     renderedCardCount = cards.length;
+    currentGameId = gameId;
 
     cards.forEach((card) => {
       const el = document.createElement('div');

@@ -402,7 +402,7 @@ function renderState(state) {
 
     const matched = state.cards.filter(c => c.matched).length / 2;
     matchDoneEl.textContent = matched;
-    renderCards(state.cards);
+    renderCards(state.cards, state.startTime);
     return;
   }
 
@@ -446,11 +446,13 @@ function renderState(state) {
 // ── Card rendering ───────────────────────────────────────────────────────────
 
 let renderedCardCount = 0;
+let currentGameId = null;
 
-function renderCards(cards) {
-  if (cards.length !== renderedCardCount) {
+function renderCards(cards, gameId) {
+  if (gameId !== currentGameId || cards.length !== renderedCardCount) {
     grid.innerHTML = '';
     renderedCardCount = cards.length;
+    currentGameId = gameId;
 
     cards.forEach((card) => {
       const el = document.createElement('div');
