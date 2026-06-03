@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>COMPASS – Card Match</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+
+  :root{
+    --bg:#060a1e;
+    --surface:#0d1235;
+    --teal:#ffffff;
+    --teal-dim:rgba(255,255,255,.6);
+    --gold:#f0b429;
+    --text:#ffffff;
+    --muted:#8898c8;
+    --card-back:#283b86;
+    --card-front:#f8f9ff;
+    --radius:14px;
+  }
+
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:var(--text)}
+
+  /* ─── OVERLAY: Start ─────────────────────────────────────────── */
+  #overlay{
+    position:fixed;inset:0;z-index:100;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 40%,#1a2560 0%,var(--bg) 70%);
+    padding:24px;
+  }
+  #overlay h1{font-size:2rem;font-weight:800;letter-spacing:-.02em;text-align:center;line-height:1.1}
+  #overlay p{color:var(--muted);margin-top:8px;text-align:center;font-size:.95rem;line-height:1.5}
+  .time-badge{
+    display:inline-block;margin-top:16px;
+    background:rgba(40,59,134,.4);border:1px solid rgba(255,255,255,.2);
+    border-radius:8px;padding:6px 16px;
+    font-size:1.4rem;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;
+    letter-spacing:.05em;
+  }
+  #startBtn{
+    margin-top:28px;width:100%;max-width:320px;
+    background:#283b86;color:#ffffff;font-size:1.1rem;font-weight:700;
+    border:1.5px solid rgba(255,255,255,.2);border-radius:12px;padding:15px;cursor:pointer;
+    transition:transform .15s,box-shadow .15s,background .2s;
+    box-shadow:0 0 32px rgba(40,59,134,.6);
+  }
+  #startBtn:hover{background:#3349a8}
+  #startBtn:active{transform:scale(.97)}
+
+  /* ─── GAME SCREEN ────────────────────────────────────────────── */
+  #gameScreen{
+    display:none;flex-direction:column;height:100%;padding:12px;
+    background:radial-gradient(ellipse at 50% 0%,#162050 0%,var(--bg) 60%);
+  }
+
+  /* Header */
+  #header{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 12px}
+  #matchCount{font-size:.8rem;color:var(--muted)}
+  #matchDone{color:var(--teal);font-weight:700}
+  #timer{
+    font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;
+    color:var(--text);letter-spacing:.05em;
+    transition:color .3s;
+  }
+  #timer.urgent{color:#e53e3e;animation:timerPulse .5s ease-in-out infinite alternate}
+  @keyframes timerPulse{from{opacity:1}to{opacity:.55}}
+
+  /* Grid */
+  #grid{
+    flex:1;display:grid;grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(4,1fr);gap:10px;
+  }
+
+  /* ─── CARDS ──────────────────────────────────────────────────── */
+  .card{
+    perspective:1000px;cursor:pointer;border-radius:var(--radius);
+    position:relative;
+  }
+  .card-inner{
+    position:relative;width:100%;height:100%;
+    transform-style:preserve-3d;
+    transition:transform .45s cubic-bezier(.4,0,.2,1);
+  }
+  .card.flipped .card-inner,.card.matched .card-inner{transform:rotateY(180deg)}
+  .card-face{
+    position:absolute;inset:0;border-radius:var(--radius);
+    backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    overflow:hidden;
+  }
+
+  .card-back-face{
+    background:linear-gradient(145deg,#1e2d6e 0%,#283b86 55%,#2d42a0 100%);
+    border:1px solid rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card-back-face svg{width:82%;height:auto;opacity:.92}
+
+  .card-front-face{
+    background:var(--card-front);
+    transform:rotateY(180deg);
+    display:flex;align-items:center;justify-content:center;
+    padding:10%;
+  }
+  .card-front-face .logo-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+  .card-front-face svg{width:100%;height:100%;object-fit:contain}
+
+  .card.matched .card-front-face{
+    background:#f0f4ff;
+    box-shadow:0 0 0 2.5px #283b86,0 0 18px rgba(40,59,134,.35);
+  }
+  .card.selected .card-back-face{
+    box-shadow:0 0 0 2px rgba(255,255,255,.7);
+  }
+
+  /* ─── END OVERLAY ────────────────────────────────────────────── */
+  #endOverlay{
+    position:fixed;inset:0;z-index:200;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(6,10,30,.93);backdrop-filter:blur(8px);
+    padding:32px;text-align:center;
+  }
+  #endOverlay .end-icon{font-size:4rem;margin-bottom:12px}
+  #endOverlay h2{font-size:1.8rem;font-weight:800}
+  .final-time{font-size:3rem;font-weight:900;color:#ffffff;margin:10px 0;font-variant-numeric:tabular-nums}
+  .end-sub{color:var(--muted);font-size:.95rem;margin-bottom:24px;line-height:1.5}
+
+  /* Name entry (qualified) */
+  #endQualified{display:none;flex-direction:column;align-items:center;width:100%;max-width:320px}
+  #endQualified h2{color:var(--gold)}
+  #nameInput{
+    margin-top:16px;width:100%;
+    background:rgba(40,59,134,.3);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;
+    color:var(--text);font-size:1.1rem;padding:14px 18px;outline:none;
+    transition:border-color .2s;text-align:center;
+  }
+  #nameInput:focus{border-color:rgba(255,255,255,.8)}
+  #nameInput::placeholder{color:rgba(255,255,255,.3)}
+  #submitBtn{
+    margin-top:12px;width:100%;
+    background:var(--gold);color:#2a1800;font-size:1.05rem;font-weight:800;
+    border:none;border-radius:12px;padding:15px;cursor:pointer;
+    transition:transform .15s,opacity .2s;
+  }
+  #submitBtn:active{transform:scale(.97)}
+  #submitBtn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Didn't qualify */
+  #endNice{display:none;flex-direction:column;align-items:center}
+  #endNice h2{color:var(--teal)}
+
+  /* Timed out */
+  #endTimeout{display:none;flex-direction:column;align-items:center}
+  #endTimeout h2{color:#e53e3e}
+
+  .action-btn{
+    margin-top:8px;
+    background:#283b86;color:#ffffff;font-size:1rem;font-weight:700;
+    border:1.5px solid rgba(255,255,255,.2);border-radius:12px;padding:14px 36px;cursor:pointer;
+    transition:transform .15s,background .2s;
+  }
+  .action-btn:hover{background:#3349a8}
+  .action-btn:active{transform:scale(.97)}
+
+  /* ─── CONNECTION ─────────────────────────────────────────────── */
+  #connDot{
+    position:fixed;bottom:12px;right:12px;
+    width:8px;height:8px;border-radius:50%;
+    background:#e53e3e;transition:background .3s;z-index:300;
+  }
+  #connDot.ok{background:#38a169}
+</style>
+</head>
+<body>
+
+<!-- Start overlay -->
+<div id="overlay">
+  <svg viewBox="65 12 270 115" xmlns="http://www.w3.org/2000/svg" style="width:380px;height:162px;margin-bottom:16px">
+    <g fill="white">
+      <path d="M75.82,17.78h16.82c1.4,0,2.54,1.14,2.54,2.54v101.75c0,1.4-1.14,2.54-2.54,2.54h-16.82c-1.4,0-2.54-1.14-2.54-2.54V20.32c0-1.4,1.14-2.54,2.54-2.54Z"/>
+      <path d="M116.03,85.72c2.85-10.19,10.2-21.57,18.84-27.8,1.26-.9,2.03-2.33,2.03-3.88V20.32c0-1.4-1.14-2.54-2.54-2.54h-16.82c-1.4,0-2.54,1.14-2.54,2.54v65.25c0,.61.85.72,1.02.14Z"/>
+      <path d="M207.13,17.78h-16.82c-1.4,0-2.54,1.14-2.54,2.54v37.6c0,1.43-1.16,2.58-2.58,2.58h-21.05c-27.11,0-49.13,21.97-49.13,49.08v12.49c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54v-12.49c0-15.04,12.19-27.23,27.23-27.23h21.09c1.41.02,2.55,1.17,2.55,2.58v37.14c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54V20.32c0-1.4-1.14-2.54-2.54-2.54Z"/>
+      <path d="M318.86,17.78h-16.82c-1.4,0-2.54,1.14,2.54,2.54v12.49c0,15.04-12.19,27.23-27.23,27.23h-21.09c-1.41-.02-2.55-1.17-2.55-2.58V20.32c0-1.4-1.14-2.54-2.54-2.54h-16.82c-1.4,0-2.54,1.14-2.54,2.54v101.75c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54v-37.6c0-1.43,1.16-2.58,2.58-2.58h21.05c27.11,0,49.13-21.97,49.13-49.08v-12.49c0-1.4-1.14-2.54-2.54-2.54Z"/>
+      <path d="M320.38,56.68c-2.85,10.19-10.2,21.57-18.84,27.8-1.26.9-2.03,2.33-2.03,3.88v33.71c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54V56.82c0-.61-.85-.72-1.02-.14Z"/>
+    </g>
+  </svg>
+  <h1>IHH Healthcare<br/>Card Match</h1>
+  <p>Flip cards to find all matching pairs.<br/>Beat the leaderboard!</p>
+  <button id="startBtn" type="button">Start Game</button>
+</div>
+
+<!-- Game screen -->
+<div id="gameScreen">
+  <div id="header">
+    <div id="matchCount">Pairs: <span id="matchDone">0</span>/8</div>
+    <div id="timer">1:30</div>
+    <div style="width:60px"></div>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<!-- End overlay -->
+<div id="endOverlay">
+
+  <!-- Qualified for top 3 -->
+  <div id="endQualified">
+    <div class="end-icon">🏆</div>
+    <h2>You qualified!</h2>
+    <div class="final-time" id="finalTimeQ">0:00</div>
+    <div class="end-sub">You made the Top 3!<br/>Enter your name for the leaderboard:</div>
+    <input id="nameInput" type="text" placeholder="Your name" maxlength="24"
+           autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <button id="submitBtn" type="button">Submit Score</button>
+  </div>
+
+  <!-- Didn't make top 3 -->
+  <div id="endNice">
+    <div class="end-icon">🎴</div>
+    <h2>Good effort!</h2>
+    <div class="final-time" id="finalTimeN">0:00</div>
+    <div class="end-sub" id="niceSubtext">Keep trying to crack the Top 3!</div>
+    <button class="action-btn" id="playAgainBtn">Play Again</button>
+  </div>
+
+  <!-- Timed out -->
+  <div id="endTimeout">
+    <div class="end-icon">⏰</div>
+    <h2>Time's Up!</h2>
+    <div class="end-sub" style="margin-top:8px">You have 1:30 to match all pairs.<br/>Give it another go!</div>
+    <button class="action-btn" id="tryAgainBtn">Try Again</button>
+  </div>
+
+</div>
+
+<!-- Connection indicator -->
+<div id="connDot"></div>
+
+<!-- Hidden SVG container for logos -->
+<div id="svgStore" style="position:absolute;left:-99999px;top:-99999px;width:2000px;height:2000px;overflow:hidden;visibility:hidden"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/motion.js"></script>
+<script>
+const { animate, stagger } = Motion;
+
+const GAME_TIME_LIMIT = 90000;
+
+// ── Logo loading ─────────────────────────────────────────────────────────────
+
+let logoBBoxes = [];
+let svgDefs = '';
+let svgGroups = [];
+
+async function initLogos() {
+  const res = await fetch('/logos.svg');
+  const text = await res.text();
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, 'image/svg+xml');
+  const root = doc.documentElement;
+
+  const clone = root.cloneNode(true);
+  clone.removeAttribute('viewBox');
+  clone.setAttribute('width', '2000');
+  clone.setAttribute('height', '2000');
+  document.getElementById('svgStore').appendChild(clone);
+
+  const defsEl = clone.querySelector('defs');
+  svgDefs = defsEl ? defsEl.outerHTML : '';
+
+  const groups = Array.from(clone.querySelectorAll('svg > g'));
+  svgGroups = groups.map(g => g.outerHTML);
+
+  logoBBoxes = groups.map(g => {
+    const bb = g.getBBox();
+    return { x: bb.x, y: bb.y, w: bb.width, h: bb.height };
+  });
+
+  document.getElementById('svgStore').innerHTML = '';
+}
+
+function logoSVG(index) {
+  const bb = logoBBoxes[index];
+  if (!bb || bb.w === 0) return '';
+  const pad = 4;
+  const vb = `${bb.x - pad} ${bb.y - pad} ${bb.w + pad * 2} ${bb.h + pad * 2}`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" style="width:100%;height:100%">
+    ${svgDefs}${svgGroups[index]}
+  </svg>`;
+}
+
+const CARD_BACK_SVG = `<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+  <g fill="white">
+    <path d="M75.82,17.78h16.82c1.4,0,2.54,1.14,2.54,2.54v101.75c0,1.4-1.14,2.54-2.54,2.54h-16.82c-1.4,0-2.54-1.14-2.54-2.54V20.32c0-1.4,1.14-2.54,2.54-2.54Z"/>
+    <path d="M116.03,85.72c2.85-10.19,10.2-21.57,18.84-27.8,1.26-.9,2.03-2.33,2.03-3.88V20.32c0-1.4-1.14-2.54-2.54-2.54h-16.82c-1.4,0-2.54,1.14-2.54,2.54v65.25c0,.61.85.72,1.02.14Z"/>
+    <path d="M207.13,17.78h-16.82c-1.4,0-2.54,1.14-2.54,2.54v37.6c0,1.43-1.16,2.58-2.58,2.58h-21.05c-27.11,0-49.13,21.97-49.13,49.08v12.49c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54v-12.49c0-15.04,12.19-27.23,27.23-27.23h21.09c1.41.02,2.55,1.17,2.55,2.58v37.14c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54V20.32c0-1.4-1.14-2.54-2.54-2.54Z"/>
+    <path d="M318.86,17.78h-16.82c-1.4,0-2.54,1.14,2.54,2.54v12.49c0,15.04-12.19,27.23-27.23,27.23h-21.09c-1.41-.02-2.55-1.17-2.55-2.58V20.32c0-1.4-1.14-2.54-2.54-2.54h-16.82c-1.4,0-2.54,1.14-2.54,2.54v101.75c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54v-37.6c0-1.43,1.16-2.58,2.58-2.58h21.05c27.11,0,49.13-21.97,49.13-49.08v-12.49c0-1.4-1.14-2.54-2.54-2.54Z"/>
+    <path d="M320.38,56.68c-2.85,10.19-10.2,21.57-18.84,27.8-1.26.9-2.03,2.33-2.03,3.88v33.71c0,1.4,1.14,2.54,2.54,2.54h16.82c1.4,0,2.54-1.14,2.54-2.54V56.82c0-.61-.85-.72-1.02-.14Z"/>
+    <path d="M264.19,150.11c-8.11,0-11.53,4.22-12.08,8.14-.02.17.09.31.26.31h5.55c.26,0,.47-.09.57-.4.53-1.61,1.8-3.19,5.22-3.19,3.6,0,6,1.75,6,4.89v.99h-4.64c-9.85,0-13.68,2.94-13.68,8.22s4.06,8.69,9.75,8.69c4.25,0,7.5-1.82,8.56-3.86v3.08c0,.17.14.31.31.31h5.36c.17,0,.31-.14.31-.31v-16.49c0-6.43-3.65-10.38-11.48-10.38ZM269.68,167.12c0,3.55-2.87,6.28-6.9,6.28-3.23,0-5.18-1.74-5.18-4.26,0-2.87,2.55-3.97,9.43-3.97h2.66v1.94Z"/>
+    <path d="M149.28,150.11c-8.11,0-11.53,4.22-12.08,8.14-.02.17.09.31.26.31h5.55c.26,0,.47-.09.57-.4.53-1.61,1.8-3.19,5.22-3.19,3.6,0,6,1.75,6,4.89v.99h-4.64c-9.85,0-13.68,2.94-13.68,8.22s4.06,8.69,9.75,8.69c4.25,0,7.5-1.82,8.56-3.86v3.08c0,.17.14.31.31.31h5.36c.17,0,.31-.14.31-.31v-16.49c0-6.43-3.65-10.38-11.48-10.38ZM154.77,167.12c0,3.55-2.86,6.28-6.9,6.28-3.23,0-5.18-1.74-5.18-4.26,0-2.87,2.55-3.97,9.43-3.97h2.66v1.94Z"/>
+    <path d="M293.89,150.38c-.33-.06-.81-.1-1.24-.1-2.65,0-5.53,1.47-6.36,4.24v-3.6c0-.17-.14-.31-.31-.31h-5.29c-.17,0-.31.14-.31.31v26.08c0,.17.14.31.31.31h5.48c.17,0,.31-.14.31-.31v-13.51c0-4.87,2.09-7.62,5.85-7.62.63,0,1.15.09,1.51.16.17.03.31-.06.31-.23v-5.11c0-.17-.1-.28-.27-.31Z"/>
+    <path d="M236.85,155.34c3.5,0,5.34,1.79,5.97,4.59.07.3.24.42.52.42h5.81c.18,0,.29-.09.29-.23,0-.06-.02-.18-.05-.32-1-5.76-5.38-9.66-12.64-9.66-9.05,0-13.84,6.07-13.84,13.82s4.79,13.82,13.84,13.82c7.25,0,11.63-3.9,12.64-9.66.02-.14.05-.26.05-.32,0-.15-.11-.23-.29-.23h-5.81c-.28,0-.45.13-.52.42-.62,2.8-2.47,4.59-5.97,4.59-5.09,0-7.69-3.77-7.69-8.62s2.61-8.62,7.69-8.62Z"/>
+    <path d="M209.99,150.16c-3.57,0-6.63,1.4-8.42,4.3v-12.44c0-.17-.14-.31-.31-.31h-5.47c-.17,0-.31.14-.31.31v34.97c0,.17.14.31.31.31h5.47c.17,0,.31-.14.31-.31v-14.59c0-4.05,2.4-7.08,6.42-7.08,3.38,0,5.52,2.15,5.52,6.64v15.03c0,.17.14.31.31.31h5.51c.17,0,.31-.14.31-.31v-15.76c0-7.37-3.85-11.07-9.65-11.07Z"/>
+    <path d="M191.77,150.6h-6.43v-6.25c0-.17-.14-.31-.31-.31h-5.47c-.17,0-.31.14-.31.31v6.25h-4.32c-.17,0-.31.14-.31.31v4.44c0,.17.14.31.31.31h4.32v10.67c0,7.15,4.19,11.29,11.34,11.29h1.19c.17,0,.31-.14.31-.31v-4.44c0-.17-.14-.31-.31-.31h-.28c-4.47,0-6.16-2.25-6.16-6.11v-10.79h6.44c.17,0,.31-.14.31-.31v-4.44c0-.17-.14-.31-.31-.31Z"/>
+    <path d="M165.79,141.7h5.47c.17,0,.31.14.31.31v34.97c0,.17-.14.31-.31.31h-5.47c-.17,0-.31-.14-.31-.31v-34.97c0-.17.14-.31.31-.31Z"/>
+    <path d="M308.13,150.14c-8.57,0-13.66,6.07-13.66,13.82s5.51,13.83,13.88,13.83c6.57,0,11.12-3.48,12.38-8.09.04-.14.06-.19.06-.25,0-.15-.11-.25-.29-.25h-5.85c-.28,0-.38.15-.52.42-.76,1.59-2.48,2.95-5.68,2.95-4.67,0-7.44-2.95-7.82-6.87h20.45c.17,0,.31-.14.31-.31v-1.51c0-7.9-4.85-13.75-13.26-13.75ZM300.84,161.01c.29-3.13,2.77-5.91,7.23-5.91s6.89,2.83,7.19,5.91h-14.42Z"/>
+    <path d="M121.01,150.14c-8.57,0-13.66,6.07-13.66,13.82s5.51,13.83,13.88,13.83c6.57,0,11.12-3.48,12.38-8.09.04-.14.06-.19.06-.25,0-.15-.11-.25-.29-.25h-5.85c-.28,0-.38.15-.52.42-.76,1.59-2.48,2.95-5.68,2.95-4.67,0-7.44-2.95-7.82-6.87h20.45c.17,0,.31-.14.31-.31v-1.51c0-7.9-4.85-13.75-13.26-13.75ZM113.72,161.01c.29-3.13,2.77-5.91,7.23-5.91s6.89,2.83,7.19,5.91h-14.42Z"/>
+    <path d="M102.83,142.17h-5.66c-.17,0-.31.14-.31.31v13.32h-17.3v-13.32c0-.17-.14-.31-.31-.31h-5.66c-.17,0-.31.14-.31.31v34.51c0,.17.14.31.31.31h5.66c.17,0,.31-.14.31-.31v-15.37h17.3v15.37c0,.17.14.31.31.31h5.66c.17,0,.31-.14.31-.31v-34.51c0-.17-.14-.31-.31-.31Z"/>
+  </g>
+</svg>`;
+
+// ── Socket & game state ──────────────────────────────────────────────────────
+
+const socket = io();
+let myState = null;
+let timerInterval = null;
+let isPlaying = false;
+
+const overlay     = document.getElementById('overlay');
+const gameScreen  = document.getElementById('gameScreen');
+const endOverlay  = document.getElementById('endOverlay');
+const endQualified = document.getElementById('endQualified');
+const endNice     = document.getElementById('endNice');
+const endTimeout  = document.getElementById('endTimeout');
+const grid        = document.getElementById('grid');
+const timerEl     = document.getElementById('timer');
+const matchDoneEl = document.getElementById('matchDone');
+const finalTimeQ  = document.getElementById('finalTimeQ');
+const finalTimeN  = document.getElementById('finalTimeN');
+const niceSubtext = document.getElementById('niceSubtext');
+const connDot     = document.getElementById('connDot');
+
+socket.on('connect', () => connDot.classList.add('ok'));
+socket.on('disconnect', () => connDot.classList.remove('ok'));
+
+socket.on('state:sync', (state) => {
+  myState = state;
+  renderState(state);
+});
+
+function fmtMs(ms) {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function startCountdown(serverStartTime) {
+  clearInterval(timerInterval);
+  isPlaying = true;
+  timerInterval = setInterval(() => {
+    if (!isPlaying) return;
+    const elapsed = Date.now() - serverStartTime;
+    const remaining = Math.max(0, GAME_TIME_LIMIT - elapsed);
+    timerEl.textContent = fmtMs(remaining);
+    timerEl.classList.toggle('urgent', remaining < 15000);
+  }, 100);
+}
+
+function stopTimer() {
+  isPlaying = false;
+  clearInterval(timerInterval);
+  timerEl.classList.remove('urgent');
+}
+
+function showEndSection(qualifies, timedOut) {
+  endQualified.style.display = 'none';
+  endNice.style.display = 'none';
+  endTimeout.style.display = 'none';
+
+  if (timedOut) {
+    endTimeout.style.display = 'flex';
+  } else if (qualifies) {
+    endQualified.style.display = 'flex';
+    document.getElementById('nameInput').value = '';
+    document.getElementById('nameInput').focus();
+  } else {
+    endNice.style.display = 'flex';
+  }
+}
+
+function renderState(state) {
+  if (state.status === 'idle') {
+    stopTimer();
+    timerEl.textContent = '1:30';
+    overlay.style.display = 'flex';
+    gameScreen.style.display = 'none';
+    endOverlay.style.display = 'none';
+    return;
+  }
+
+  if (state.status === 'playing') {
+    overlay.style.display = 'none';
+    endOverlay.style.display = 'none';
+    gameScreen.style.display = 'flex';
+
+    if (!isPlaying && state.startTime) startCountdown(state.startTime);
+
+    const matched = state.cards.filter(c => c.matched).length / 2;
+    matchDoneEl.textContent = matched;
+    renderCards(state.cards);
+    return;
+  }
+
+  if (state.status === 'finished') {
+    stopTimer();
+    gameScreen.style.display = 'none';
+    endOverlay.style.display = 'flex';
+
+    const timeStr = fmtMs(state.pendingScore);
+    finalTimeQ.textContent = timeStr;
+    finalTimeN.textContent = timeStr;
+
+    // Show how far off the cutoff they were (only if leaderboard has 3 entries)
+    if (state.leaderboard && state.leaderboard.length >= 3 && !state.qualifies) {
+      const diff = Math.ceil((state.pendingScore - state.leaderboard[2].time) / 1000);
+      niceSubtext.textContent = `${diff}s off the Top 3 cutoff (${state.leaderboard[2].timeStr})`;
+    } else {
+      niceSubtext.textContent = 'Keep trying to crack the Top 3!';
+    }
+
+    showEndSection(state.qualifies, false);
+
+    animate('#endOverlay .end-icon', { scale: [0, 1.2, 1] }, { duration: .5 });
+    animate('#endOverlay h2', { opacity: [0,1], y: [16,0] }, { duration: .4, delay: .2 });
+    animate('#endOverlay .final-time', { opacity: [0,1], scale: [.8,1] }, { duration: .4, delay: .35 });
+    return;
+  }
+
+  if (state.status === 'timeout') {
+    stopTimer();
+    timerEl.textContent = '0:00';
+    gameScreen.style.display = 'none';
+    endOverlay.style.display = 'flex';
+    showEndSection(false, true);
+
+    animate('#endOverlay .end-icon', { scale: [0, 1.2, 1] }, { duration: .5 });
+    animate('#endOverlay h2', { opacity: [0,1], y: [16,0] }, { duration: .4, delay: .2 });
+  }
+}
+
+// ── Card rendering ───────────────────────────────────────────────────────────
+
+let renderedCardCount = 0;
+
+function renderCards(cards) {
+  if (cards.length !== renderedCardCount) {
+    grid.innerHTML = '';
+    renderedCardCount = cards.length;
+
+    cards.forEach((card) => {
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.dataset.id = card.id;
+      el.innerHTML = `
+        <div class="card-inner">
+          <div class="card-face card-back-face">${CARD_BACK_SVG}</div>
+          <div class="card-face card-front-face">
+            <div class="logo-wrap">${logoSVG(card.logoIndex)}</div>
+          </div>
+        </div>`;
+      el.addEventListener('click', () => flipCard(card.id));
+      grid.appendChild(el);
+    });
+
+    animate('.card', { opacity: [0,1], scale: [.85,1] }, {
+      duration: .35,
+      delay: stagger(.04),
+      easing: [.22,1,.36,1]
+    });
+  }
+
+  cards.forEach((card) => {
+    const el = grid.querySelector(`[data-id="${card.id}"]`);
+    if (!el) return;
+    el.classList.toggle('flipped', card.flipped || card.matched);
+    el.classList.toggle('matched', card.matched);
+  });
+}
+
+function flipCard(cardId) {
+  if (!myState || myState.status !== 'playing') return;
+  const card = myState.cards[cardId];
+  if (!card || card.flipped || card.matched) return;
+  if (myState.flippedCards.length >= 2) return;
+
+  socket.emit('card:flip', { cardId });
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+
+// ── Button handlers ──────────────────────────────────────────────────────────
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  socket.emit('game:start');
+});
+
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) return;
+  socket.emit('game:submit_name', { name });
+});
+
+document.getElementById('nameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('submitBtn').click();
+});
+
+document.getElementById('playAgainBtn').addEventListener('click', () => {
+  socket.emit('game:reset');
+});
+
+document.getElementById('tryAgainBtn').addEventListener('click', () => {
+  socket.emit('game:reset');
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+initLogos().catch(console.error);
+</script>
+</body>
+</html>

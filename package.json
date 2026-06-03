@@ -1,0 +1,16 @@
+{
+  "name": "compass-card-match",
+  "version": "1.0.0",
+  "description": "Dual-screen card matching memory game for COMPASS events",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "motion": "^12.40.0",
+    "pg": "^8.21.0",
+    "socket.io": "^4.7.2"
+  }
+}
