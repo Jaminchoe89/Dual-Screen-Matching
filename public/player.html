@@ -277,6 +277,10 @@ async function initLogos() {
   });
 
   document.getElementById('svgStore').innerHTML = '';
+
+  // If state arrived before logos finished loading, rebuild the card grid now
+  renderedCardCount = 0;
+  if (myState) renderState(myState);
 }
 
 function logoSVG(index) {

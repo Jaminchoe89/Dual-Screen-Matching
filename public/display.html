@@ -302,6 +302,10 @@ async function initLogos() {
     return { x: bb.x, y: bb.y, w: bb.width, h: bb.height };
   });
   document.getElementById('svgStore').innerHTML = '';
+
+  // If state arrived before logos finished loading, rebuild the card grid now
+  renderedCardCount = 0;
+  if (lastState) renderState(lastState);
 }
 
 function logoSVG(index) {
