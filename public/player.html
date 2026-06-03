@@ -193,7 +193,7 @@
 <div id="gameScreen">
   <div id="header">
     <div id="matchCount">Pairs: <span id="matchDone">0</span>/8</div>
-    <div id="timer">1:30</div>
+    <div id="timer">1:00</div>
     <div style="width:60px"></div>
   </div>
   <div id="grid"></div>
@@ -226,7 +226,7 @@
   <div id="endTimeout">
     <div class="end-icon">⏰</div>
     <h2>Time's Up!</h2>
-    <div class="end-sub" style="margin-top:8px">You have 1:30 to match all pairs.<br/>Give it another go!</div>
+    <div class="end-sub" style="margin-top:8px">You have 1:00 to match all pairs.<br/>Give it another go!</div>
     <button class="action-btn" id="tryAgainBtn">Try Again</button>
   </div>
 
@@ -243,7 +243,7 @@
 <script>
 const { animate, stagger } = Motion;
 
-const GAME_TIME_LIMIT = 90000;
+const GAME_TIME_LIMIT = 60000;
 
 // ── Logo loading ─────────────────────────────────────────────────────────────
 
@@ -380,7 +380,7 @@ function showEndSection(qualifies, timedOut) {
 function renderState(state) {
   if (state.status === 'idle') {
     stopTimer();
-    timerEl.textContent = '1:30';
+    timerEl.textContent = '1:00';
     overlay.style.display = 'flex';
     gameScreen.style.display = 'none';
     endOverlay.style.display = 'none';

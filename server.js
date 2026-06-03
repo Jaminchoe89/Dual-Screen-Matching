@@ -76,7 +76,7 @@ async function dbInsertScore(name, timeMs, timeStr) {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const GAME_TIME_LIMIT = 90000; // 1 min 30 sec
+const GAME_TIME_LIMIT = 60000; // 1 min
 
 // ── Game state ────────────────────────────────────────────────────────────────
 
@@ -179,14 +179,14 @@ io.on('connection', (socket) => {
           }
 
           io.emit('state:sync', state);
-        }, 400);
+        }, 300);
       } else {
         setTimeout(() => {
           c1.flipped = false;
           c2.flipped = false;
           state.flippedCards = [];
           io.emit('state:sync', state);
-        }, 700);
+        }, 500);
       }
     }
   });
