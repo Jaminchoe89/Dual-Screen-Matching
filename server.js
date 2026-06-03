@@ -16,6 +16,7 @@ app.get('/logos.svg', (req, res) => {
   res.sendFile(path.join(__dirname, 'Logos.svg'));
 });
 
+app.get('/',        (req, res) => res.redirect('/play'));
 app.get('/play',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'player.html')));
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
 
