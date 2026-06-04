@@ -252,7 +252,7 @@
       <input id="phoneInput" type="tel" placeholder="Phone number"
              autocomplete="off" spellcheck="false"/>
     </div>
-    <div id="phoneNote">Your number is for contact purposes only and will not be displayed.</div>
+    <div id="phoneNote">Required. Your number is for contact purposes only and will not be displayed.</div>
     <button id="submitBtn" type="button">Submit Score</button>
   </div>
 
@@ -549,8 +549,10 @@ document.getElementById('submitBtn').addEventListener('click', () => {
   const name = document.getElementById('nameInput').value.trim();
   const code = document.getElementById('countryCode').value;
   const number = document.getElementById('phoneInput').value.trim();
-  const phone = number ? `${code} ${number}` : '';
-  if (!name) return;
+  if (!name) { document.getElementById('nameInput').focus(); return; }
+  if (!number) { document.getElementById('phoneInput').focus(); document.getElementById('phoneInput').style.borderColor = '#e53e3e'; return; }
+  document.getElementById('phoneInput').style.borderColor = '';
+  const phone = `${code} ${number}`;
   socket.emit('game:submit_name', { name, phone });
 });
 
