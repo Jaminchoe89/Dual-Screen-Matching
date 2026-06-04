@@ -128,14 +128,36 @@
   /* Name entry (qualified) */
   #endQualified{display:none;flex-direction:column;align-items:center;width:100%;max-width:320px}
   #endQualified h2{color:var(--gold)}
-  #nameInput,#phoneInput{
+  #nameInput{
     margin-top:16px;width:100%;
     background:rgba(40,59,134,.3);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;
     color:var(--text);font-size:1.1rem;padding:14px 18px;outline:none;
     transition:border-color .2s;text-align:center;
   }
-  #nameInput:focus,#phoneInput:focus{border-color:rgba(255,255,255,.8)}
-  #nameInput::placeholder,#phoneInput::placeholder{color:rgba(255,255,255,.3)}
+  #nameInput:focus{border-color:rgba(255,255,255,.8)}
+  #nameInput::placeholder{color:rgba(255,255,255,.3)}
+
+  #phoneRow{display:flex;gap:8px;width:100%;margin-top:16px}
+  #countryCode{
+    flex:0 0 auto;width:88px;
+    background:rgba(40,59,134,.3);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;
+    color:var(--text);font-size:1rem;padding:14px 8px;outline:none;
+    transition:border-color .2s;text-align:center;cursor:pointer;
+    appearance:none;-webkit-appearance:none;
+  }
+  #countryCode:focus{border-color:rgba(255,255,255,.8)}
+  #phoneInput{
+    flex:1;
+    background:rgba(40,59,134,.3);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;
+    color:var(--text);font-size:1.1rem;padding:14px 14px;outline:none;
+    transition:border-color .2s;
+  }
+  #phoneInput:focus{border-color:rgba(255,255,255,.8)}
+  #phoneInput::placeholder{color:rgba(255,255,255,.3)}
+  #phoneNote{
+    margin-top:8px;font-size:.75rem;color:rgba(255,255,255,.35);
+    text-align:center;line-height:1.4;
+  }
   #submitBtn{
     margin-top:12px;width:100%;
     background:var(--gold);color:#2a1800;font-size:1.05rem;font-weight:800;
@@ -210,8 +232,27 @@
     <div class="end-sub">You made the Top 3!<br/>Enter your details for the leaderboard:</div>
     <input id="nameInput" type="text" placeholder="Your name" maxlength="24"
            autocomplete="off" autocorrect="off" spellcheck="false"/>
-    <input id="phoneInput" type="tel" placeholder="Phone number"
-           autocomplete="off" spellcheck="false"/>
+    <div id="phoneRow">
+      <select id="countryCode">
+        <option value="+65">🇸🇬 +65</option>
+        <option value="+60">🇲🇾 +60</option>
+        <option value="+62">🇮🇩 +62</option>
+        <option value="+63">🇵🇭 +63</option>
+        <option value="+66">🇹🇭 +66</option>
+        <option value="+84">🇻🇳 +84</option>
+        <option value="+91">🇮🇳 +91</option>
+        <option value="+86">🇨🇳 +86</option>
+        <option value="+852">🇭🇰 +852</option>
+        <option value="+81">🇯🇵 +81</option>
+        <option value="+82">🇰🇷 +82</option>
+        <option value="+61">🇦🇺 +61</option>
+        <option value="+44">🇬🇧 +44</option>
+        <option value="+1">🇺🇸 +1</option>
+      </select>
+      <input id="phoneInput" type="tel" placeholder="Phone number"
+             autocomplete="off" spellcheck="false"/>
+    </div>
+    <div id="phoneNote">Your number is for contact purposes only and will not be displayed.</div>
     <button id="submitBtn" type="button">Submit Score</button>
   </div>
 
@@ -378,6 +419,7 @@ function showEndSection(qualifies, timedOut) {
     endQualified.style.display = 'flex';
     document.getElementById('nameInput').value = '';
     document.getElementById('phoneInput').value = '';
+    document.getElementById('countryCode').selectedIndex = 0;
     document.getElementById('nameInput').focus();
   } else {
     endNice.style.display = 'flex';
@@ -505,7 +547,9 @@ document.getElementById('startBtn').addEventListener('click', () => {
 
 document.getElementById('submitBtn').addEventListener('click', () => {
   const name = document.getElementById('nameInput').value.trim();
-  const phone = document.getElementById('phoneInput').value.trim();
+  const code = document.getElementById('countryCode').value;
+  const number = document.getElementById('phoneInput').value.trim();
+  const phone = number ? `${code} ${number}` : '';
   if (!name) return;
   socket.emit('game:submit_name', { name, phone });
 });
