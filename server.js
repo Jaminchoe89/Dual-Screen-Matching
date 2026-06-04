@@ -19,6 +19,24 @@ app.get('/logos.svg', (req, res) => {
 app.get('/',        (req, res) => res.redirect('/play'));
 app.get('/play',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'player.html')));
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
+app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
+app.get('/api/scores', async (req, res) => {
+  try {
+    if (pool) {
+      const { rows } = await pool.query(`
+        SELECT name, phone, time_str AS "timeStr", time_ms AS "timeMs", played_at AS "playedAt"
+        FROM scores
+        ORDER BY time_ms ASC
+      `);
+      return res.json(rows);
+    }
+    // in-memory fallback (no phone data available)
+    res.json(state.leaderboard.map(e => ({ name: e.name, phone: '', timeStr: e.timeStr, timeMs: e.time, playedAt: null })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── Database ──────────────────────────────────────────────────────────────────
 
@@ -41,10 +59,15 @@ async function initDB() {
     CREATE TABLE IF NOT EXISTS scores (
       id        SERIAL PRIMARY KEY,
       name      TEXT    NOT NULL,
+      phone     TEXT,
       time_ms   INTEGER NOT NULL,
       time_str  TEXT    NOT NULL,
       played_at TIMESTAMP DEFAULT NOW()
     )
+  `);
+  // add phone column if table already existed without it
+  await pool.query(`
+    ALTER TABLE scores ADD COLUMN IF NOT EXISTS phone TEXT
   `);
 }
 
@@ -59,11 +82,11 @@ async function dbLoadLeaderboard() {
   return rows;
 }
 
-async function dbInsertScore(name, timeMs, timeStr) {
+async function dbInsertScore(name, phone, timeMs, timeStr) {
   if (!pool) return null;
   await pool.query(
-    `INSERT INTO scores (name, time_ms, time_str) VALUES ($1, $2, $3)`,
-    [name, timeMs, timeStr]
+    `INSERT INTO scores (name, phone, time_ms, time_str) VALUES ($1, $2, $3, $4)`,
+    [name, phone || null, timeMs, timeStr]
   );
   const { rows } = await pool.query(`
     SELECT name, time_ms AS time, time_str AS "timeStr"
@@ -191,14 +214,15 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('game:submit_name', async ({ name }) => {
+  socket.on('game:submit_name', async ({ name, phone }) => {
     if (state.status !== 'finished' || !state.qualifies || state.pendingScore === null) return;
     const trimmed = String(name).trim().slice(0, 24);
     if (!trimmed) return;
+    const trimmedPhone = phone ? String(phone).trim().slice(0, 20) : '';
 
     let leaderboard;
     try {
-      leaderboard = await dbInsertScore(trimmed, state.pendingScore, fmtTime(state.pendingScore));
+      leaderboard = await dbInsertScore(trimmed, trimmedPhone, state.pendingScore, fmtTime(state.pendingScore));
     } catch (err) {
       console.error('DB insert failed, using in-memory fallback:', err.message);
     }

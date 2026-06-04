@@ -128,14 +128,14 @@
   /* Name entry (qualified) */
   #endQualified{display:none;flex-direction:column;align-items:center;width:100%;max-width:320px}
   #endQualified h2{color:var(--gold)}
-  #nameInput{
+  #nameInput,#phoneInput{
     margin-top:16px;width:100%;
     background:rgba(40,59,134,.3);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;
     color:var(--text);font-size:1.1rem;padding:14px 18px;outline:none;
     transition:border-color .2s;text-align:center;
   }
-  #nameInput:focus{border-color:rgba(255,255,255,.8)}
-  #nameInput::placeholder{color:rgba(255,255,255,.3)}
+  #nameInput:focus,#phoneInput:focus{border-color:rgba(255,255,255,.8)}
+  #nameInput::placeholder,#phoneInput::placeholder{color:rgba(255,255,255,.3)}
   #submitBtn{
     margin-top:12px;width:100%;
     background:var(--gold);color:#2a1800;font-size:1.05rem;font-weight:800;
@@ -207,9 +207,11 @@
     <div class="end-icon">🏆</div>
     <h2>You qualified!</h2>
     <div class="final-time" id="finalTimeQ">0:00</div>
-    <div class="end-sub">You made the Top 3!<br/>Enter your name for the leaderboard:</div>
+    <div class="end-sub">You made the Top 3!<br/>Enter your details for the leaderboard:</div>
     <input id="nameInput" type="text" placeholder="Your name" maxlength="24"
            autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <input id="phoneInput" type="tel" placeholder="Phone number"
+           autocomplete="off" spellcheck="false"/>
     <button id="submitBtn" type="button">Submit Score</button>
   </div>
 
@@ -375,6 +377,7 @@ function showEndSection(qualifies, timedOut) {
   } else if (qualifies) {
     endQualified.style.display = 'flex';
     document.getElementById('nameInput').value = '';
+    document.getElementById('phoneInput').value = '';
     document.getElementById('nameInput').focus();
   } else {
     endNice.style.display = 'flex';
@@ -502,8 +505,9 @@ document.getElementById('startBtn').addEventListener('click', () => {
 
 document.getElementById('submitBtn').addEventListener('click', () => {
   const name = document.getElementById('nameInput').value.trim();
+  const phone = document.getElementById('phoneInput').value.trim();
   if (!name) return;
-  socket.emit('game:submit_name', { name });
+  socket.emit('game:submit_name', { name, phone });
 });
 
 document.getElementById('nameInput').addEventListener('keydown', (e) => {
