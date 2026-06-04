@@ -85,6 +85,14 @@
     margin-bottom:16px;font-size:.85rem;color:var(--muted);
   }
   #status.error{color:#e53e3e}
+  #dbStatus{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:.78rem;padding:4px 12px;border-radius:20px;margin-bottom:16px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--muted);
+  }
+  #dbStatus .dot{width:7px;height:7px;border-radius:50%;background:#e53e3e}
+  #dbStatus.connected .dot{background:#38a169}
+  #dbStatus.connected{color:#68d391}
 </style>
 </head>
 <body>
@@ -108,6 +116,7 @@
   <button class="refresh-btn" onclick="load()">Refresh</button>
 </header>
 
+<div id="dbStatus"><span class="dot"></span><span id="dbLabel">Checking database…</span></div>
 <div id="status"></div>
 
 <div class="stats">
@@ -153,6 +162,16 @@ function fmtDate(iso) {
     + ' ' + d.toLocaleTimeString('en-SG', { hour:'2-digit', minute:'2-digit' });
 }
 
+async function checkDB() {
+  try {
+    const res = await fetch('/api/status');
+    const { db } = await res.json();
+    const el = document.getElementById('dbStatus');
+    el.className = db ? 'connected' : '';
+    document.getElementById('dbLabel').textContent = db ? 'Database connected' : 'No database — using in-memory (phone numbers not stored)';
+  } catch {}
+}
+
 async function load() {
   const statusEl = document.getElementById('status');
   statusEl.className = '';
@@ -191,6 +210,7 @@ async function load() {
   }
 }
 
+checkDB();
 load();
 </script>
 </body>

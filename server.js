@@ -16,10 +16,16 @@ app.get('/logos.svg', (req, res) => {
   res.sendFile(path.join(__dirname, 'Logos.svg'));
 });
 
+const NO_CACHE = { headers: { 'Cache-Control': 'no-store' } };
+
 app.get('/',        (req, res) => res.redirect('/play'));
-app.get('/play',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'player.html')));
-app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
-app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/play',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'player.html'), NO_CACHE));
+app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html'), NO_CACHE));
+app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html'), NO_CACHE));
+
+app.get('/api/status', (req, res) => {
+  res.json({ db: !!pool });
+});
 
 app.get('/api/scores', async (req, res) => {
   try {
