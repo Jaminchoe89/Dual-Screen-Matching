@@ -229,7 +229,7 @@
     <div class="end-icon">🏆</div>
     <h2>You qualified!</h2>
     <div class="final-time" id="finalTimeQ">0:00</div>
-    <div class="end-sub">You made the Top 3!<br/>Enter your details for the leaderboard:</div>
+    <div class="end-sub">You made the Top 5!<br/>Enter your details for the leaderboard:</div>
     <input id="nameInput" type="text" placeholder="Your name" maxlength="24"
            autocomplete="off" autocorrect="off" spellcheck="false"/>
     <div id="phoneRow">
@@ -261,7 +261,7 @@
     <div class="end-icon">🎴</div>
     <h2>Good effort!</h2>
     <div class="final-time" id="finalTimeN">0:00</div>
-    <div class="end-sub" id="niceSubtext">Keep trying to crack the Top 3!</div>
+    <div class="end-sub" id="niceSubtext">Keep trying to crack the Top 5!</div>
     <button class="action-btn" id="playAgainBtn">Play Again</button>
   </div>
 
@@ -450,12 +450,12 @@ function renderState(state) {
     finalTimeQ.textContent = timeStr;
     finalTimeN.textContent = timeStr;
 
-    // Show how far off the cutoff they were (only if leaderboard has 3 entries)
-    if (state.leaderboard && state.leaderboard.length >= 3 && !state.qualifies) {
-      const diff = Math.ceil((state.pendingScore - state.leaderboard[2].time) / 1000);
-      niceSubtext.textContent = `${diff}s off the Top 3 cutoff (${state.leaderboard[2].timeStr})`;
+    // Show how far off the cutoff they were (only if leaderboard has 5 entries)
+    if (state.leaderboard && state.leaderboard.length >= 5 && !state.qualifies) {
+      const diff = Math.ceil((state.pendingScore - state.leaderboard[4].time) / 1000);
+      niceSubtext.textContent = `${diff}s off the Top 5 cutoff (${state.leaderboard[4].timeStr})`;
     } else {
-      niceSubtext.textContent = 'Keep trying to crack the Top 3!';
+      niceSubtext.textContent = 'Keep trying to crack the Top 5!';
     }
 
     showEndSection(state.qualifies, false);

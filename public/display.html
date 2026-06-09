@@ -133,6 +133,7 @@
   .lb-row.rank-1{background:linear-gradient(160deg,rgba(240,180,41,.18),rgba(240,180,41,.06));border:1px solid rgba(240,180,41,.25)}
   .lb-row.rank-2{background:linear-gradient(160deg,rgba(192,192,192,.12),rgba(192,192,192,.04));border:1px solid rgba(192,192,192,.12)}
   .lb-row.rank-3{background:linear-gradient(160deg,rgba(184,115,51,.12),rgba(184,115,51,.04));border:1px solid rgba(184,115,51,.12)}
+  .lb-row.rank-4,.lb-row.rank-5{background:linear-gradient(160deg,rgba(80,120,200,.10),rgba(80,120,200,.03));border:1px solid rgba(80,120,200,.10)}
 
   .lb-rank{
     width:52px;height:52px;border-radius:50%;flex-shrink:0;
@@ -244,7 +245,7 @@
   </div>
 
   <div id="sidePane">
-    <div class="side-title">Top 3 Leaderboard</div>
+    <div class="side-title">Top 5 Leaderboard</div>
 
     <div id="statusBanner">
       <div class="sb-icon" id="sbIcon"></div>
@@ -419,7 +420,7 @@ function showFinished(state, animate_in) {
 
   if (state.qualifies) {
     sbIcon.textContent = '🏆';
-    sbLabel.textContent = 'New Top 3!';
+    sbLabel.textContent = 'New Top 5!';
     sbValue.textContent = timeStr;
     sbSub.textContent = 'Entering name on the tablet…';
   } else {
@@ -496,7 +497,7 @@ function renderCards(cards, gameId) {
 // ── Leaderboard ──────────────────────────────────────────────────────────────
 
 const MEDALS = ['🥇','🥈','🥉'];
-const RANK_CLASSES = ['rank-1','rank-2','rank-3'];
+const RANK_CLASSES = ['rank-1','rank-2','rank-3','rank-4','rank-5'];
 
 function renderLeaderboard(entries) {
   if (!entries || entries.length === 0) {

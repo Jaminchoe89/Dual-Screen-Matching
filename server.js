@@ -83,7 +83,7 @@ async function dbLoadLeaderboard() {
     SELECT name, time_ms AS time, time_str AS "timeStr"
     FROM scores
     ORDER BY time_ms ASC
-    LIMIT 3
+    LIMIT 5
   `);
   return rows;
 }
@@ -98,7 +98,7 @@ async function dbInsertScore(name, phone, timeMs, timeStr) {
     SELECT name, time_ms AS time, time_str AS "timeStr"
     FROM scores
     ORDER BY time_ms ASC
-    LIMIT 3
+    LIMIT 5
   `);
   return rows;
 }
@@ -141,15 +141,15 @@ function fmtTime(ms) {
 }
 
 function qualifiesForLeaderboard(elapsed) {
-  if (state.leaderboard.length < 3) return true;
-  return elapsed < state.leaderboard[2].time;
+  if (state.leaderboard.length < 5) return true;
+  return elapsed < state.leaderboard[4].time;
 }
 
-// In-memory fallback: insert + return new top 3
+// In-memory fallback: insert + return new top 5
 function memInsertScore(name, timeMs, timeStr) {
   return [...state.leaderboard, { name, time: timeMs, timeStr }]
     .sort((a, b) => a.time - b.time)
-    .slice(0, 3);
+    .slice(0, 5);
 }
 
 // ── Socket handlers ───────────────────────────────────────────────────────────
