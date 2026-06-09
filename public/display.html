@@ -108,11 +108,15 @@
   }
   #idleScreen h2{font-size:2rem;font-weight:800;color:var(--teal);text-align:center}
   #idleScreen p{color:var(--muted);text-align:center;font-size:1rem;max-width:320px;line-height:1.6}
-  .pulse-ring{
-    width:120px;height:120px;border-radius:50%;border:2px solid var(--teal);
-    animation:ring 2s ease-in-out infinite;position:absolute;
+  #idleCards{display:flex;gap:10px;align-items:center;perspective:600px}
+  .ic-wrap{width:42px;height:60px;flex-shrink:0}
+  .ic-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d}
+  .ic-face{
+    position:absolute;inset:0;border-radius:7px;
+    backface-visibility:hidden;-webkit-backface-visibility:hidden;
   }
-  @keyframes ring{0%{transform:scale(.85);opacity:.6}50%{transform:scale(1.1);opacity:.2}100%{transform:scale(.85);opacity:.6}}
+  .ic-back{background:#1e2d7a;border:1.5px solid rgba(255,255,255,.18);box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  .ic-front{background:#8898c8;border:1.5px solid rgba(255,255,255,.35);transform:rotateY(180deg);box-shadow:0 4px 14px rgba(0,0,0,.4)}
 
   /* ─── BOTTOM PANEL ───────────────────────────────────────────── */
   .side-title{
@@ -235,9 +239,11 @@
 
     <div id="grid" style="display:none"></div>
     <div id="idleScreen">
-      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:8px">
-        <div class="pulse-ring"></div>
-        <div style="font-size:3.2rem">🎴</div>
+      <div id="idleCards">
+        <div class="ic-wrap"><div class="ic-inner"><div class="ic-face ic-back"></div><div class="ic-face ic-front"></div></div></div>
+        <div class="ic-wrap"><div class="ic-inner"><div class="ic-face ic-back"></div><div class="ic-face ic-front"></div></div></div>
+        <div class="ic-wrap"><div class="ic-inner"><div class="ic-face ic-back"></div><div class="ic-face ic-front"></div></div></div>
+        <div class="ic-wrap"><div class="ic-inner"><div class="ic-face ic-back"></div><div class="ic-face ic-front"></div></div></div>
       </div>
       <h2>Memory Match</h2>
       <p>Pick up the tablet and press Start to begin!</p>
@@ -272,6 +278,29 @@
 <script src="/motion.js"></script>
 <script>
 const { animate, stagger } = Motion;
+
+// ── Idle card flip animation ──────────────────────────────────────────────────
+let idleAnims = [];
+
+function startIdleAnimation() {
+  stopIdleAnimation();
+  document.querySelectorAll('.ic-inner').forEach((el, i) => {
+    idleAnims.push(animate(el, { rotateY: [0, 180, 0] }, {
+      duration: 1.6,
+      delay: i * 0.25,
+      repeat: Infinity,
+      ease: [0.4, 0, 0.2, 1],
+    }));
+  });
+}
+
+function stopIdleAnimation() {
+  idleAnims.forEach(a => { try { a.cancel(); } catch (_) {} });
+  idleAnims = [];
+  document.querySelectorAll('.ic-inner').forEach(el => {
+    el.style.transform = '';
+  });
+}
 
 const GAME_TIME_LIMIT = 60000;
 
@@ -384,9 +413,11 @@ function showIdle() {
   idleScreen.style.display = 'flex';
   statusBanner.style.display = 'none';
   renderedCardCount = 0;
+  startIdleAnimation();
 }
 
 function showGame(state) {
+  stopIdleAnimation();
   idleScreen.style.display = 'none';
   grid.style.display = 'grid';
   statusBanner.style.display = 'none';
