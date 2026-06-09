@@ -106,10 +106,28 @@ async function dbInsertScore(name, phone, timeMs, timeStr) {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const GAME_TIME_LIMIT = 60000; // 1 min
+const INACTIVITY_MS   = 45000; // 45 s of no activity → reset to idle
 
 // ── Game state ────────────────────────────────────────────────────────────────
 
-let timeoutHandle = null;
+let timeoutHandle    = null;
+let inactivityHandle = null;
+
+function resetInactivityTimer() {
+  clearTimeout(inactivityHandle);
+  inactivityHandle = setTimeout(() => {
+    if (state.status === 'idle') return;
+    clearTimeout(timeoutHandle);
+    state = { ...state, status: 'idle', cards: [], flippedCards: [], startTime: null, pendingScore: null, qualifies: false };
+    io.emit('state:sync', state);
+    console.log('Inactivity timeout — reset to idle');
+  }, INACTIVITY_MS);
+}
+
+function clearInactivityTimer() {
+  clearTimeout(inactivityHandle);
+  inactivityHandle = null;
+}
 
 let state = {
   status: 'idle',   // 'idle' | 'playing' | 'finished' | 'timeout'
@@ -159,6 +177,7 @@ io.on('connection', (socket) => {
 
   socket.on('game:start', () => {
     clearTimeout(timeoutHandle);
+    resetInactivityTimer();
     state = {
       ...state,
       status: 'playing',
@@ -179,6 +198,7 @@ io.on('connection', (socket) => {
 
   socket.on('card:flip', ({ cardId }) => {
     if (state.status !== 'playing') return;
+    resetInactivityTimer();
     if (state.flippedCards.length >= 2) return;
 
     const card = state.cards[cardId];
@@ -248,11 +268,13 @@ io.on('connection', (socket) => {
       pendingScore: null,
       qualifies: false,
     };
+    clearInactivityTimer();
     io.emit('state:sync', state);
   });
 
   socket.on('game:reset', () => {
     clearTimeout(timeoutHandle);
+    clearInactivityTimer();
     state = { ...state, status: 'idle', cards: [], flippedCards: [], startTime: null, pendingScore: null, qualifies: false };
     io.emit('state:sync', state);
   });
