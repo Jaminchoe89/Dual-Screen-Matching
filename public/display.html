@@ -148,6 +148,7 @@
   .rank-1 .lb-rank{background:var(--gold);color:#3a2000;font-size:1.8rem}
   .rank-2 .lb-rank{background:#b0b8c8;color:#1a2030}
   .rank-3 .lb-rank{background:#c07350;color:#2a1a10}
+  .rank-4 .lb-rank,.rank-5 .lb-rank{background:transparent;overflow:visible}
 
   .lb-name{
     width:100%;font-weight:700;font-size:1.2rem;color:var(--text);
@@ -527,7 +528,9 @@ function renderCards(cards, gameId) {
 
 // ── Leaderboard ──────────────────────────────────────────────────────────────
 
-const MEDALS = ['🥇','🥈','🥉'];
+const MEDAL_4 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="34" height="34"><rect x="12" y="0" width="7" height="13" rx="1.5" fill="#0369a1"/><rect x="21" y="0" width="7" height="13" rx="1.5" fill="#7dd3fc"/><circle cx="20" cy="28" r="12" fill="#0ea5e9"/><circle cx="20" cy="28" r="9.5" fill="none" stroke="#bae6fd" stroke-width="1.5"/><text x="20" y="33" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="900" fill="white">4</text></svg>`;
+const MEDAL_5 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="34" height="34"><rect x="12" y="0" width="7" height="13" rx="1.5" fill="#15803d"/><rect x="21" y="0" width="7" height="13" rx="1.5" fill="#86efac"/><circle cx="20" cy="28" r="12" fill="#22c55e"/><circle cx="20" cy="28" r="9.5" fill="none" stroke="#bbf7d0" stroke-width="1.5"/><text x="20" y="33" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="900" fill="white">5</text></svg>`;
+const MEDALS = ['🥇','🥈','🥉', MEDAL_4, MEDAL_5];
 const RANK_CLASSES = ['rank-1','rank-2','rank-3','rank-4','rank-5'];
 
 function renderLeaderboard(entries) {
